@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: Optic-Spark Z-Image-Turbo API
+  version: 0.1.0
+paths:
+  /generate:
+    post:
+      summary: Generate Image
+      operationId: generate_image_generate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateImageRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateImageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    GenerateImageRequest:
+      properties:
+        webhook_url:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Webhook Url
+          description: The URL where the final image result will be POSTed.
+        prompt:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Prompt
+          description: The text description of the desired image.
+        aspect_ratio:
+          type: string
+          enum:
+          - '1:1'
+          - '16:9'
+          - '9:16'
+          - '4:3'
+          - '3:4'
+          - '3:2'
+          - '2:3'
+          title: Aspect Ratio
+          description: Strictly enforced aspect ratios for web graphics.
+          default: '1:1'
+        output_format:
+          type: string
+          enum:
+          - webp
+          - jpeg
+          - png
+          title: Output Format
+          description: Desired file format for the output image.
+          default: webp
+      type: object
+      required:
+      - webhook_url
+      - prompt
+      title: GenerateImageRequest
+    GenerateImageResponse:
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          title: Job Id
+          description: A unique identifier for tracking the generation job.
+        status:
+          type: string
+          const: accepted
+          title: Status
+          description: Indicates the job has been queued.
+      type: object
+      required:
+      - job_id
+      - status
+      title: GenerateImageResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

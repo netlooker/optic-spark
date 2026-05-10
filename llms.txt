@@ -1,0 +1,23 @@
+# Optic-Spark API Context
+
+Optic-Spark is a production-grade asynchronous REST API for generating web-optimized graphics using the Z-Image-Turbo foundation model.
+
+## API Architecture
+
+1. **Endpoint**: `POST /generate`
+2. **Payload Schema**:
+   - `webhook_url` (uri, required): Where the result payload will be POSTed.
+   - `prompt` (string, required): Text description of the image.
+   - `aspect_ratio` (enum, required): Strict buckets ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"]
+   - `output_format` (enum, required): Web-ready formats ["webp", "jpeg", "png"]
+3. **Response**: HTTP 202 Accepted. Returns `job_id` and `status: "accepted"`.
+
+## Webhook Delivery
+
+The background worker performs inference (via GGUF block-wise quantization) and delivers a JSON payload to the `webhook_url`:
+- **Success**: `{"job_id": "uuid", "status": "completed", "image_url": "uri"}`
+- **Failure**: `{"job_id": "uuid", "status": "failed", "error_code": "code", "error_hint": "resolution hint"}`
+
+## Agent Interactions
+
+When integrating with Optic-Spark, you must provide a resolvable `webhook_url` to receive the final rendering. Do not poll the server. Wait for the POST request to arrive.

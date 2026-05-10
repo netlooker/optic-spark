@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  init-model-downloader:
+    image: python:3.11-slim
+    container_name: optic-spark-downloader
+    command: >
+      bash -c "if ls /model/*Q4_K_M.gguf* 1> /dev/null 2>&1; then 
+                 echo 'Local DGX model cache found in /model. Skipping download.'; 
+               else 
+                 pip install huggingface_hub[cli] && 
+                 hf download unsloth/Z-Image-Turbo-GGUF --include '*Q4_K_M.gguf*' --local-dir /model; 
+               fi"
+    volumes:
+      - ${HOST_MODEL_DIR:-model_data}:/model
+    restart: "no"
+
+  optic-spark-api:
+    build: .
+    container_name: optic-spark-api
+    ports:
+      - "${API_PORT:-7070}:8000"
+    environment:
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - TORCH_CUDA_ARCH_LIST=12.1a
+      - MODEL_PATH=/model
+      - GGUF_MODEL_PATH=${GGUF_MODEL_PATH:-}
+      - BASE_URL=${BASE_URL:-http://localhost:7070}
+      - OUTPUT_DIR=/app/output
+      - API_PORT=${API_PORT:-7070}
+    volumes:
+      - ./src:/app/src
+      - ./output:/app/output
+      - ${HOST_MODEL_DIR:-model_data}:/model
+    depends_on:
+      init-model-downloader:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  model_data:

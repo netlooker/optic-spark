@@ -1,0 +1,39 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Docker
+.docker/
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Models and Data
+# Ignore downloaded model files (just in case they are mapped locally)
+model/
+model_data/
+*.gguf
+*.safetensors
+*.pt
+*.bin
+
+# Optic-Spark specific
+logs/
+*.log
+output/
