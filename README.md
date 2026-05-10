@@ -80,6 +80,15 @@ Because Optic-Spark is built on FastAPI, the OpenAPI specification is fully auto
 - **Interactive UI (Swagger):** Navigate to `http://<your-dgx-ip>:7070/docs` once the container is running to test endpoints directly.
 - **Static File:** The complete static definition has been exported to the `openapi.yaml` file at the root of the repository, making it plug-and-play for LLMs, autonomous agents, and REST clients.
 
+## Agent Integration
+
+Optic-Spark is designed to be consumed by autonomous AI agents out of the box. Two reference documents are provided at the root of the repository:
+
+| File | Purpose |
+|------|---------|
+| [`skill.md`](./skill.md) | **Full agent skill guide** — step-by-step execution flow (request → await webhook → download image), Z-Image-Turbo prompting best practices, and example payloads. Load this into your agent's system prompt or tool description. |
+| [`llms.txt`](./llms.txt) | **Compact API reference** — minimal context-window-friendly summary of the endpoint schema and webhook contract, suitable for inclusion in larger agent prompts. |
+
 ## Architecture Map
 
 For a quick reference of the API topological map (optimized for LLMs and autonomous agents), please refer to `llms.txt`.
