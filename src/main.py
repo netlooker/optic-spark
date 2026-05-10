@@ -1,15 +1,15 @@
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.staticfiles import StaticFiles
-from uuid import uuid4
+import asyncio
 import logging
 import os
+from contextlib import asynccontextmanager
+from uuid import uuid4
 
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from .engine import get_pipeline
 from .schemas import GenerateImageRequest, GenerateImageResponse
 from .worker import process_image_generation
-from .engine import get_pipeline
-import asyncio
-
-from contextlib import asynccontextmanager
 
 # Configure beautiful and structured terminal logging
 logging.basicConfig(
@@ -42,10 +42,10 @@ app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
 @app.post("/generate", response_model=GenerateImageResponse, status_code=202)
 async def generate_image(request: GenerateImageRequest, background_tasks: BackgroundTasks):
     job_id = uuid4()
-    
+
     logger.info(f"📥 [REQUEST RECEIVED] Job: {job_id} | Prompt: '{request.prompt[:40]}...'")
-    
+
     # Enqueue background task
     background_tasks.add_task(process_image_generation, job_id, request)
-    
+
     return GenerateImageResponse(job_id=job_id, status="accepted")

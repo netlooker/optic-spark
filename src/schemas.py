@@ -1,6 +1,8 @@
-from pydantic import BaseModel, HttpUrl, Field, field_validator
-from typing import Literal, Optional
+from typing import Literal
 from uuid import UUID
+
+from pydantic import BaseModel, Field, HttpUrl, field_validator
+
 
 class GenerateImageRequest(BaseModel):
     webhook_url: HttpUrl = Field(..., description="The URL where the final image result will be POSTed.")
@@ -26,6 +28,6 @@ class GenerateImageResponse(BaseModel):
 class WebhookDeliveryPayload(BaseModel):
     job_id: UUID
     status: Literal["completed", "failed"]
-    image_url: Optional[HttpUrl] = Field(None, description="The URL to download the generated image (if successful).")
-    error_code: Optional[str] = Field(None, description="Semantic error code if the job failed.")
-    error_hint: Optional[str] = Field(None, description="Plain-text resolution hint for AI agent retry.")
+    image_url: HttpUrl | None = Field(None, description="The URL to download the generated image (if successful).")
+    error_code: str | None = Field(None, description="Semantic error code if the job failed.")
+    error_hint: str | None = Field(None, description="Plain-text resolution hint for AI agent retry.")

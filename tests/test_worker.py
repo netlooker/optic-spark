@@ -1,9 +1,10 @@
 """Tests for the worker module: filename generation and pipeline error handling."""
-import pytest
-from uuid import UUID
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.worker import generate_filename
+from uuid import UUID
 
+import pytest
+
+from src.worker import generate_filename
 
 # ─────────────────────────────────────────────
 # generate_filename
@@ -52,9 +53,10 @@ class TestGenerateFilename:
 @pytest.mark.asyncio
 async def test_process_image_generation_inference_failure_sends_failed_webhook():
     """If inference throws, worker must still dispatch a 'failed' webhook payload."""
+    import uuid
+
     from src.schemas import GenerateImageRequest
     from src.worker import process_image_generation
-    import uuid
 
     job_id = uuid.uuid4()
     request = GenerateImageRequest(

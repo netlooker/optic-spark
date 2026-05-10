@@ -1,8 +1,9 @@
-import os
 import io
-import threading
-import torch
 import logging
+import os
+import threading
+
+import torch
 from diffusers import ZImagePipeline
 
 logger = logging.getLogger("optic-spark.engine")
@@ -19,7 +20,7 @@ def get_gguf_file():
         return exact_path
 
     # Otherwise auto-discover the model
-    for root, dirs, files in os.walk(MODEL_PATH):
+    for root, _dirs, files in os.walk(MODEL_PATH):
         for file in files:
             if "Q4_K_M.gguf" in file:
                 return os.path.join(root, file)
@@ -51,7 +52,7 @@ def get_pipeline():
 
 def generate(prompt: str, aspect_ratio: str, output_format: str) -> bytes:
     pipe = get_pipeline()
-    
+
     # Map aspect ratio to the most popular web/device resolutions
     ar_map = {
         "1:1": (1024, 1024),      # Standard GenAI / High-res Social Square
@@ -63,9 +64,9 @@ def generate(prompt: str, aspect_ratio: str, output_format: str) -> bytes:
         "2:3": (800, 1200),       # Standard WXGA vertical
     }
     width, height = ar_map.get(aspect_ratio, (1024, 1024))
-    
+
     logger.info(f"🎨 [INFERENCE RUNNING] Hardware crunching size: {width}x{height}")
-    
+
     # Generate image
     image = pipe(
         prompt=prompt,
@@ -74,7 +75,7 @@ def generate(prompt: str, aspect_ratio: str, output_format: str) -> bytes:
         num_inference_steps=8,
         guidance_scale=0.0,
     ).images[0]
-    
+
     # Encode output to bytes
     buffer = io.BytesIO()
     fmt_map = {"jpeg": "JPEG", "png": "PNG", "webp": "WEBP"}

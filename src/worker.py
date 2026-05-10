@@ -1,12 +1,14 @@
+import asyncio
 import logging
-import aiohttp
 import os
 import re
-import asyncio
 from datetime import datetime
 from uuid import UUID
-from .schemas import GenerateImageRequest, WebhookDeliveryPayload
+
+import aiohttp
+
 from .engine import generate
+from .schemas import GenerateImageRequest, WebhookDeliveryPayload
 
 logger = logging.getLogger("optic-spark.worker")
 
@@ -22,7 +24,7 @@ def generate_filename(prompt: str, job_id: UUID, ext: str) -> str:
 
 async def process_image_generation(job_id: UUID, request: GenerateImageRequest):
     logger.info(f"⚙️  [PIPELINE STARTED] Job: {job_id}")
-    
+
     try:
         # Run synchronous generation in a threadpool to prevent blocking the FastAPI event loop
         # We wrap this in an asyncio.Lock to ensure only ONE generation happens at a time to prevent CUDA OOM
@@ -35,28 +37,28 @@ async def process_image_generation(job_id: UUID, request: GenerateImageRequest):
                 aspect_ratio=request.aspect_ratio,
                 output_format=request.output_format
             )
-        
+
         # Save to local output directory with meaningful filename
         filename = generate_filename(request.prompt, job_id, request.output_format)
         output_dir = os.environ.get("OUTPUT_DIR", "/app/output")
         os.makedirs(output_dir, exist_ok=True)
-        
+
         filepath = os.path.join(output_dir, filename)
         with open(filepath, "wb") as f:
             f.write(image_bytes)
-            
+
         logger.info(f"✅ [GENERATION COMPLETE] Job: {job_id} | Saved to: {filename}")
-            
+
         # The URL now points to the static file server
         base_url = os.environ.get("BASE_URL", "http://localhost:7070")
         image_url = f"{base_url.rstrip('/')}/output/{filename}"
-        
+
         payload = WebhookDeliveryPayload(
             job_id=job_id,
             status="completed",
             image_url=image_url
         )
-        
+
     except FileNotFoundError as e:
         logger.error(f"❌ [MODEL NOT FOUND] Job: {job_id} | {e}")
         payload = WebhookDeliveryPayload(
@@ -73,7 +75,7 @@ async def process_image_generation(job_id: UUID, request: GenerateImageRequest):
             error_code="INFERENCE_ERROR",
             error_hint=str(e)
         )
-        
+
     # Deliver webhook
     logger.info(f"📡 [DISPATCHING WEBHOOK] Job: {job_id} | Target: {request.webhook_url}")
     timeout = aiohttp.ClientTimeout(total=15)

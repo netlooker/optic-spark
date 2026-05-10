@@ -1,9 +1,9 @@
 """Tests for engine.py: model discovery, resolution mapping, singleton behaviour."""
-import os
 import importlib
-import pytest
-from unittest.mock import patch, MagicMock
+import os
+from unittest.mock import MagicMock, patch
 
+import pytest
 
 # ─────────────────────────────────────────────
 # get_gguf_file
@@ -83,7 +83,6 @@ class TestResolutionMapping:
         mock_pipe = MagicMock(side_effect=fake_pipeline)
         engine.pipeline = mock_pipe
 
-        import io
         with patch("src.engine.io.BytesIO") as mock_buf_cls:
             buf = MagicMock()
             buf.getvalue.return_value = b"fake_bytes"
@@ -111,7 +110,6 @@ class TestResolutionMapping:
         mock_pipe = MagicMock(side_effect=fake_pipeline)
         engine.pipeline = mock_pipe
 
-        import io
         with patch("src.engine.io.BytesIO") as mock_buf_cls:
             buf = MagicMock()
             buf.getvalue.return_value = b"fake_bytes"

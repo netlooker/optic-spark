@@ -1,6 +1,8 @@
 import pytest
 from pydantic import ValidationError
+
 from src.schemas import GenerateImageRequest, GenerateImageResponse, WebhookDeliveryPayload
+
 
 def test_generate_image_request_valid():
     request = GenerateImageRequest(
