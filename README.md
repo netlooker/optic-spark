@@ -37,11 +37,11 @@ Optic-Spark exposes a single primary endpoint designed for async generation.
   "webhook_url": "https://your-service.com/api/webhook/receiver",
   "prompt": "A highly detailed cyberpunk server room, glowing neon lights, cinematic",
   "aspect_ratio": "16:9",
-  "output_format": "webp"
+  "output_format": "png"
 }
 ```
 *(Supported aspect ratios and mapped resolutions: `16:9` (1280x720), `9:16` (720x1280), `1:1` (1024x1024), `4:3` (1024x768), `3:4` (768x1024), `3:2` (1200x800), `2:3` (800x1200))*
-*(Supported formats: `webp`, `jpeg`, `png`)*
+*(Supported formats: `png` (default), `webp`, `jpeg`)*
 
 **Immediate Response (202 Accepted):**
 ```json

@@ -78,5 +78,5 @@ def generate(prompt: str, aspect_ratio: str, output_format: str) -> bytes:
     # Encode output to bytes
     buffer = io.BytesIO()
     fmt_map = {"jpeg": "JPEG", "png": "PNG", "webp": "WEBP"}
-    image.save(buffer, format=fmt_map.get(output_format, "WEBP"))
+    image.save(buffer, format=fmt_map.get(output_format, "PNG"))
     return buffer.getvalue()

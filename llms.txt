@@ -9,7 +9,7 @@ Optic-Spark is a production-grade asynchronous REST API for generating web-optim
    - `webhook_url` (uri, required): Where the result payload will be POSTed.
    - `prompt` (string, required): Text description of the image.
    - `aspect_ratio` (enum, required): Strict buckets ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"]
-   - `output_format` (enum, required): Web-ready formats ["webp", "jpeg", "png"]
+   - `output_format` (enum, optional, default `"png"`): Web-ready formats ["png", "webp", "jpeg"]
 3. **Response**: HTTP 202 Accepted. Returns `job_id` and `status: "accepted"`.
 
 ## Webhook Delivery

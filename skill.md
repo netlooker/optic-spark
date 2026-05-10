@@ -20,11 +20,11 @@ Send an HTTP `POST` request to the Optic-Spark API's `/generate` endpoint.
   "webhook_url": "<YOUR_WEBHOOK_RECEIVER_URL>",
   "prompt": "<highly detailed description of the image>",
   "aspect_ratio": "16:9",
-  "output_format": "webp"
+  "output_format": "png"
 }
 ```
-*Note on `aspect_ratio`: You MUST select from the following strict buckets: `"1:1"`, `"16:9"`, `"9:16"`, `"4:3"`, `"3:4"`, `"3:2"`, or `"2:3"`.*
-*Note on `output_format`: You MUST select from: `"webp"`, `"jpeg"`, or `"png"`.*
+*Note on `aspect_ratio`: You MUST select from the following strict buckets: `"1:1"`, `"16:9"`, `"9:16"`, `"4:3"`, `"3:4"`, `"3:2"`, or `"2:3"`. Default is `"1:1"`.*
+*Note on `output_format`: Supported values: `"png"` (default), `"webp"`, `"jpeg"`.*
 
 **Expected Response:** You will instantly receive an `HTTP 202 Accepted`.
 ```json

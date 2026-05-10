@@ -9,7 +9,7 @@ class GenerateImageRequest(BaseModel):
         default="1:1", description="Strictly enforced aspect ratios for web graphics."
     )
     output_format: Literal["webp", "jpeg", "png"] = Field(
-        default="webp", description="Desired file format for the output image."
+        default="png", description="Desired file format for the output image."
     )
 
     @field_validator("prompt")

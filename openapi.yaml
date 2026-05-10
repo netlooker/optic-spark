@@ -64,7 +64,7 @@ components:
           - png
           title: Output Format
           description: Desired file format for the output image.
-          default: webp
+          default: png
       type: object
       required:
       - webhook_url
