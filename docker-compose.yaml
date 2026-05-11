@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   init-model-downloader:
     image: python:3.11-slim
@@ -18,10 +16,17 @@ services:
   optic-spark-api:
     build: .
     container_name: optic-spark-api
+    shm_size: '8gb'
     ports:
       - "${API_PORT:-7070}:8000"
     environment:
-      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      # --- Grace-Blackwell Unified Memory Optimizations ---
+      - CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+      - CUDA_CACHE_MAXSIZE=4294967296
+      - CUDA_MODULE_LOADING=EAGER
+      - CUDA_DEVICE_MAX_CONNECTIONS=1
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
+      # --- System & Application ---
       - TORCH_CUDA_ARCH_LIST=12.1a
       - MODEL_PATH=/model
       - GGUF_MODEL_PATH=${GGUF_MODEL_PATH:-}
