@@ -45,24 +45,24 @@ apply_spark_optimizations
 
 cd "${PROJECT_DIR}" || { echo "❌ Project dir not found: ${PROJECT_DIR}"; exit 1; }
 
-echo "🚀 Launching Optic-Spark API..."
-docker compose up -d
-
-echo ""
+echo "🚀 Launching Optic-Spark API (streaming logs)..."
 echo "⏳ Waiting for Z-Image-Turbo to pre-warm into VRAM..."
 echo "   (First boot downloads auxiliary model components ~5-8 GB)"
 echo ""
 
-SECONDS_WAITED=0
-MAX_WAIT=600  # 10 minutes max for first-boot model download
+# Run compose in foreground (streams logs live) in a background subshell
+docker compose up &
+COMPOSE_PID=$!
 
+# Poll /health in parallel — print banner as soon as model is ready
+MAX_WAIT=600
+SECONDS_WAITED=0
 while ! curl -sf "http://localhost:${API_PORT}/health" >/dev/null 2>&1; do
   if [ "${SECONDS_WAITED}" -ge "${MAX_WAIT}" ]; then
-    echo "❌ Timed out after ${MAX_WAIT}s waiting for API. Check logs:"
-    echo "   docker compose logs optic-spark-api"
+    echo ""
+    echo "❌ Timed out after ${MAX_WAIT}s waiting for API. Check logs above."
     exit 1
   fi
-  printf "\r   ⏱  %ds elapsed — model loading..." "${SECONDS_WAITED}"
   sleep 5
   SECONDS_WAITED=$((SECONDS_WAITED + 5))
 done
