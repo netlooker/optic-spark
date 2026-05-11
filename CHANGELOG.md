@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] — 2026-05-11
 
 ### Added
+- Native Go CLI (`cli/optic-cli`) for standalone testing; abstracts webhook orchestration automatically
 - Asynchronous `POST /generate` REST endpoint returning `HTTP 202 Accepted`
 - Webhook-based image delivery: the DGX worker POSTs a JSON payload to the caller's `webhook_url` on completion
 - Z-Image-Turbo GGUF (Q4_K_M quantization) inference engine via Diffusers `from_single_file`

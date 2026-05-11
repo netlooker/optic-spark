@@ -25,6 +25,21 @@ cd optic-spark
 docker compose up -d --build
 ```
 
+## Native CLI Client
+
+For easy local testing or agent use, a native standalone Go binary is included that abstracts the async webhook architecture. It automatically spins up an ephemeral receiver, dispatches the prompt, and downloads the result.
+
+```bash
+# Compile the client
+cd cli && go build -o optic-cli main.go
+
+# Generate an image (blocks until downloaded!)
+./optic-cli --prompt "A massive blackwell GPU cluster, cyberpunk lighting" --aspect 16:9
+
+# See all options
+./optic-cli --help
+```
+
 ## API Usage
 
 Optic-Spark exposes a single primary endpoint designed for async generation. 
