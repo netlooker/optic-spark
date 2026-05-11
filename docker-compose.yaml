@@ -2,15 +2,33 @@ services:
   init-model-downloader:
     image: python:3.11-slim
     container_name: optic-spark-downloader
+    environment:
+      - HF_HOME=/hf_cache
     command: >
-      bash -c "if ls /model/*Q4_K_M.gguf* 1> /dev/null 2>&1; then 
-                 echo 'Local DGX model cache found in /model. Skipping download.'; 
-               else 
-                 pip install huggingface_hub[cli] && 
-                 hf download unsloth/Z-Image-Turbo-GGUF --include '*Q4_K_M.gguf*' --local-dir /model; 
-               fi"
+      bash -c "
+        pip install -q huggingface_hub[cli] &&
+
+        echo '=== Step 1: GGUF transformer ===' &&
+        if ls /model/*Q4_K_M.gguf* 1>/dev/null 2>&1; then
+          echo '✓ GGUF already cached in /model. Skipping.';
+        else
+          echo 'Downloading Z-Image-Turbo GGUF...' &&
+          huggingface-cli download unsloth/Z-Image-Turbo-GGUF --include '*Q4_K_M.gguf*' --local-dir /model;
+        fi &&
+
+        echo '=== Step 2: Auxiliary components (text encoder, VAE, tokenizer, scheduler) ===' &&
+        if [ -d /hf_cache/hub/models--Tongyi-MAI--Z-Image-Turbo ]; then
+          echo '✓ HF auxiliary components already cached. Skipping.';
+        else
+          echo 'Downloading Tongyi-MAI/Z-Image-Turbo auxiliary components...' &&
+          huggingface-cli download Tongyi-MAI/Z-Image-Turbo
+            --exclude 'transformer/*'
+            --cache-dir /hf_cache/hub;
+        fi &&
+        echo '✓ All model assets ready.'"
     volumes:
       - ${HOST_MODEL_DIR:-model_data}:/model
+      - hf_cache:/hf_cache
     restart: "no"
 
   optic-spark-api:
