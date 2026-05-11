@@ -101,8 +101,9 @@ Optic-Spark is designed to be consumed by autonomous AI agents out of the box. T
 
 | File | Purpose |
 |------|---------|
-| [`skill.md`](./skill.md) | **Full agent skill guide** — step-by-step execution flow (request → await webhook → download image), Z-Image-Turbo prompting best practices, and example payloads. Load this into your agent's system prompt or tool description. |
-| [`llms.txt`](./llms.txt) | **Compact API reference** — minimal context-window-friendly summary of the endpoint schema and webhook contract, suitable for inclusion in larger agent prompts. |
+| [`skill.md`](./skill.md) | **API agent skill guide** — step-by-step execution flow for orchestrating async webhook callbacks, and Z-Image-Turbo prompting rules. |
+| [`cli/skill.md`](./cli/skill.md) | **CLI agent skill guide** — instructions for using the `optic-cli` binary to generate images synchronously without handling webhooks. |
+| [`llms.txt`](./llms.txt) | **Compact API reference** — minimal context-window-friendly summary of the endpoint schema and webhook contract. |
 
 ## Architecture Map
 
