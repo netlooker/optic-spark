@@ -39,6 +39,12 @@ OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/app/output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
 
+@app.get("/health")
+async def health():
+    """Lightweight readiness probe — returns 200 only after model is pre-warmed."""
+    return {"status": "ok", "model": "z-image-turbo"}
+
+
 @app.post("/generate", response_model=GenerateImageResponse, status_code=202)
 async def generate_image(request: GenerateImageRequest, background_tasks: BackgroundTasks):
     job_id = uuid4()
