@@ -14,6 +14,7 @@ import (
 	"strings"
 )
 
+// GenerateRequest is the payload sent to the Optic-Spark /generate endpoint.
 type GenerateRequest struct {
 	WebhookURL   string `json:"webhook_url"`
 	Prompt       string `json:"prompt"`
@@ -21,12 +22,85 @@ type GenerateRequest struct {
 	OutputFormat string `json:"output_format"`
 }
 
+// WebhookPayload is the callback payload delivered by the Optic-Spark worker.
 type WebhookPayload struct {
 	JobID     string `json:"job_id"`
 	Status    string `json:"status"`
 	ImageURL  string `json:"image_url"`
 	ErrorCode string `json:"error_code"`
 	ErrorHint string `json:"error_hint"`
+}
+
+// newWebhookHandler returns an http.HandlerFunc that decodes the webhook
+// payload and signals the done channel.
+func newWebhookHandler(done chan bool, outDir string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var payload WebhookPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+
+		if payload.Status == "failed" {
+			fmt.Printf("\n❌ Generation failed (Job %s)\n", payload.JobID)
+			fmt.Printf("Error: %s - %s\n", payload.ErrorCode, payload.ErrorHint)
+			done <- false
+			return
+		}
+
+		fmt.Printf("\n✅ Image generated successfully! Downloading...\n")
+		err := downloadImage(payload.ImageURL, outDir)
+		if err != nil {
+			fmt.Printf("❌ Failed to download image: %v\n", err)
+			done <- false
+			return
+		}
+
+		done <- true
+	}
+}
+
+// downloadImage fetches the image at url and writes it into outDir,
+// using the filename component of the URL.
+func downloadImage(url, outDir string) error {
+	resp, err := http.Get(url) //nolint:gosec // url is from trusted API webhook
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	// Extract filename from URL
+	parts := strings.Split(url, "/")
+	filename := parts[len(parts)-1]
+
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create output dir: %w", err)
+	}
+
+	dst := filepath.Join(outDir, filename)
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if _, err = io.Copy(out, resp.Body); err != nil {
+		return err
+	}
+
+	fmt.Printf("💾 Saved to: %s\n", dst)
+	return nil
 }
 
 func main() {
@@ -54,41 +128,12 @@ func main() {
 
 	done := make(chan bool)
 
-	// 2. Setup webhook handler
-	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var payload WebhookPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-
-		if payload.Status == "failed" {
-			fmt.Printf("\n❌ Generation failed (Job %s)\n", payload.JobID)
-			fmt.Printf("Error: %s - %s\n", payload.ErrorCode, payload.ErrorHint)
-			done <- false
-			return
-		}
-
-		fmt.Printf("\n✅ Image generated successfully! Downloading...\n")
-		err := downloadImage(payload.ImageURL, *outDir)
-		if err != nil {
-			fmt.Printf("❌ Failed to download image: %v\n", err)
-			done <- false
-			return
-		}
-
-		done <- true
-	})
+	// 2. Setup webhook handler and start server
+	mux := http.NewServeMux()
+	mux.HandleFunc("/webhook", newWebhookHandler(done, *outDir))
 
 	go func() {
-		if err := http.Serve(listener, nil); err != nil {
+		if err := http.Serve(listener, mux); err != nil {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
@@ -103,11 +148,11 @@ func main() {
 
 	bodyBytes, _ := json.Marshal(reqPayload)
 	endpoint := fmt.Sprintf("%s/generate", strings.TrimRight(*apiHost, "/"))
-	
+
 	fmt.Printf("🚀 Dispatching request to %s...\n", endpoint)
 	fmt.Printf("📡 Listening for webhook on %s...\n", webhookURL)
 
-	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(bodyBytes))
+	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(bodyBytes)) //nolint:gosec
 	if err != nil {
 		log.Fatalf("❌ Failed to contact API: %v", err)
 	}
@@ -126,37 +171,4 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("🎉 All done!")
-}
-
-func downloadImage(url, outDir string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", resp.Status)
-	}
-
-	// Extract filename from URL
-	parts := strings.Split(url, "/")
-	filename := parts[len(parts)-1]
-	
-	os.MkdirAll(outDir, 0755)
-	filepath := filepath.Join(outDir, filename)
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("💾 Saved to: %s\n", filepath)
-	return nil
 }
