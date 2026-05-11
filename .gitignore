@@ -38,3 +38,4 @@ model_data/
 logs/
 *.log
 output/
+cli/optic-cli
