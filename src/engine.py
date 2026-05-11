@@ -4,14 +4,19 @@ import os
 import threading
 
 import torch
-from diffusers import ZImagePipeline
+from diffusers import GGUFQuantizationConfig, ZImagePipeline
+from diffusers.models import ZImageTransformer2DModel
 
 logger = logging.getLogger("optic-spark.engine")
+
+# The full pipeline repo on HF (text encoder, VAE, tokenizer, scheduler)
+HF_MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 
 # Constants
 MODEL_PATH = os.environ.get("MODEL_PATH", "/model")
 pipeline = None
 _pipeline_lock = threading.Lock()
+
 
 def get_gguf_file():
     # Allow exact path override if user specified in .env
@@ -25,6 +30,7 @@ def get_gguf_file():
             if "Q4_K_M.gguf" in file:
                 return os.path.join(root, file)
     return None
+
 
 def get_pipeline():
     global pipeline
@@ -41,11 +47,25 @@ def get_pipeline():
         if not gguf_file:
             raise FileNotFoundError(f"No Q4_K_M GGUF model found in {MODEL_PATH}")
 
-        logger.info(f"📦 [LOADING MODEL] Z-Image-Turbo from: {gguf_file}...")
+        logger.info(f"📦 [LOADING TRANSFORMER] GGUF from: {gguf_file}...")
 
-        pipeline = ZImagePipeline.from_single_file(
+        # Load only the transformer from the GGUF file (it does NOT contain
+        # the text encoder, VAE, tokenizer or scheduler)
+        quantization_config = GGUFQuantizationConfig(compute_dtype=torch.bfloat16)
+        transformer = ZImageTransformer2DModel.from_single_file(
             gguf_file,
-            torch_dtype=torch.bfloat16
+            quantization_config=quantization_config,
+            torch_dtype=torch.bfloat16,
+        )
+
+        logger.info(f"🔗 [PIPELINE ASSEMBLY] Loading auxiliary components from HF hub: {HF_MODEL_ID}...")
+
+        # Load text encoder, VAE, tokenizer and scheduler from the full HF model.
+        # The quantized transformer above is injected in place of the full one.
+        pipeline = ZImagePipeline.from_pretrained(
+            HF_MODEL_ID,
+            transformer=transformer,
+            torch_dtype=torch.bfloat16,
         ).to("cuda")
 
         return pipeline

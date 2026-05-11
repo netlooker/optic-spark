@@ -14,6 +14,7 @@ if "OUTPUT_DIR" not in os.environ:
 _HEAVY_MODULES = [
     "torch",
     "diffusers",
+    "diffusers.models",
     "diffusers.pipelines",
     "transformers",
     "accelerate",
