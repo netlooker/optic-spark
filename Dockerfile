@@ -1,33 +1,20 @@
-FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+FROM nvcr.io/nvidia/pytorch:24.01-py3
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3.11-venv \
-    python3.11-dev \
-    git \
-    build-essential \
     ffmpeg \
     libsm6 \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-ENV VENV=/opt/venv
-RUN python3.11 -m venv $VENV
-ENV PATH="$VENV/bin:$PATH"
-
-RUN pip install --upgrade pip setuptools wheel
-
 WORKDIR /app
 
 COPY requirements.txt .
 
-# Install PyTorch for CUDA 12.1 first
-RUN pip install --no-cache-dir torch==2.1.2 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# Install remaining dependencies
+# PyTorch is already installed and highly optimized for Grace-Blackwell in this NGC container.
+# We just install the remaining API dependencies.
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Add source code
