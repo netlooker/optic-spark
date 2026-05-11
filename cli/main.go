@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,9 +32,29 @@ type WebhookPayload struct {
 	ErrorHint string `json:"error_hint"`
 }
 
+// rewriteLocalhostURL replaces localhost/127.0.0.1 in a URL with the
+// actual API host so the CLI can download images even when BASE_URL is
+// not configured on the server (common during initial setup).
+func rewriteLocalhostURL(imageURL, apiHost string) string {
+	if apiHost == "" {
+		return imageURL
+	}
+	parsed, err := url.Parse(imageURL)
+	if err != nil {
+		return imageURL
+	}
+	h := parsed.Hostname()
+	if h == "localhost" || h == "127.0.0.1" {
+		// Keep just the path (+ query), swap the host with apiHost.
+		return strings.TrimRight(apiHost, "/") + parsed.RequestURI()
+	}
+	return imageURL
+}
+
 // newWebhookHandler returns an http.HandlerFunc that decodes the webhook
-// payload and signals the done channel.
-func newWebhookHandler(done chan bool, outDir string) http.HandlerFunc {
+// payload and signals the done channel. apiHost is used to rewrite localhost
+// image URLs in case BASE_URL is not configured on the server.
+func newWebhookHandler(done chan bool, outDir, apiHost string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -56,7 +77,11 @@ func newWebhookHandler(done chan bool, outDir string) http.HandlerFunc {
 		}
 
 		fmt.Printf("\n✅ Image generated successfully! Downloading...\n")
-		err := downloadImage(payload.ImageURL, outDir)
+
+		// Rewrite localhost URLs so we can download from the remote DGX.
+		imageURL := rewriteLocalhostURL(payload.ImageURL, apiHost)
+
+		err := downloadImage(imageURL, outDir)
 		if err != nil {
 			fmt.Printf("❌ Failed to download image: %v\n", err)
 			done <- false
@@ -130,7 +155,7 @@ func main() {
 
 	// 2. Setup webhook handler and start server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/webhook", newWebhookHandler(done, *outDir))
+	mux.HandleFunc("/webhook", newWebhookHandler(done, *outDir, strings.TrimRight(*apiHost, "/")))
 
 	go func() {
 		if err := http.Serve(listener, mux); err != nil {

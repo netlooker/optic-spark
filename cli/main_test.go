@@ -102,12 +102,13 @@ func TestWebhookHandler_CompletedPayload(t *testing.T) {
 
 	outDir := t.TempDir()
 	done := make(chan bool, 1)
-	handler := newWebhookHandler(done, outDir)
+	// Pass imgSrv.URL as apiHost so localhost URLs in the payload rewrite correctly.
+	handler := newWebhookHandler(done, outDir, imgSrv.URL)
 
 	payload := WebhookPayload{
 		JobID:    "abc-123",
 		Status:   "completed",
-		ImageURL: imgSrv.URL + "/output/result.png",
+		ImageURL: "http://localhost:7070/output/result.png",
 	}
 
 	rr := postWebhook(t, handler, payload)
@@ -123,7 +124,7 @@ func TestWebhookHandler_CompletedPayload(t *testing.T) {
 
 func TestWebhookHandler_FailedPayload(t *testing.T) {
 	done := make(chan bool, 1)
-	handler := newWebhookHandler(done, t.TempDir())
+	handler := newWebhookHandler(done, t.TempDir(), "")
 
 	payload := WebhookPayload{
 		JobID:     "abc-456",
@@ -145,7 +146,7 @@ func TestWebhookHandler_FailedPayload(t *testing.T) {
 
 func TestWebhookHandler_WrongMethod(t *testing.T) {
 	done := make(chan bool, 1)
-	handler := newWebhookHandler(done, t.TempDir())
+	handler := newWebhookHandler(done, t.TempDir(), "")
 
 	req := httptest.NewRequest(http.MethodGet, "/webhook", nil)
 	rr := httptest.NewRecorder()
@@ -158,7 +159,7 @@ func TestWebhookHandler_WrongMethod(t *testing.T) {
 
 func TestWebhookHandler_InvalidJSON(t *testing.T) {
 	done := make(chan bool, 1)
-	handler := newWebhookHandler(done, t.TempDir())
+	handler := newWebhookHandler(done, t.TempDir(), "")
 
 	req := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader("{not-valid-json"))
 	rr := httptest.NewRecorder()
@@ -177,7 +178,7 @@ func TestWebhookHandler_DownloadFailure(t *testing.T) {
 	defer imgSrv.Close()
 
 	done := make(chan bool, 1)
-	handler := newWebhookHandler(done, t.TempDir())
+	handler := newWebhookHandler(done, t.TempDir(), imgSrv.URL)
 
 	payload := WebhookPayload{
 		JobID:    "abc-789",
