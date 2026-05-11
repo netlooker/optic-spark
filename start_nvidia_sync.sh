@@ -63,8 +63,8 @@ while ! curl -sf "http://localhost:${API_PORT}/health" >/dev/null 2>&1; do
     echo "❌ Timed out after ${MAX_WAIT}s waiting for API. Check logs above."
     exit 1
   fi
-  sleep 5
-  SECONDS_WAITED=$((SECONDS_WAITED + 5))
+  sleep 10
+  SECONDS_WAITED=$((SECONDS_WAITED + 10))
 done
 
 echo ""
