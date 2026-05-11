@@ -17,8 +17,6 @@ _HEAVY_MODULES = [
     "diffusers.pipelines",
     "transformers",
     "accelerate",
-    "nvidia",
-    "nvimgcodec",
     "aiohttp",
 ]
 

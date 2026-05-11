@@ -3,7 +3,6 @@ uvicorn[standard]
 pydantic
 git+https://github.com/huggingface/diffusers.git@refs/pull/12756/head
 huggingface_hub[gguf]
-nvidia-nvimgcodec
 transformers
 accelerate
 aiohttp
